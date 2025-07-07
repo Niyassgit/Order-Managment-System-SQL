@@ -22,12 +22,12 @@ create table products (
 --Table for Orders:
 
 create table orders(
-    oreder_id serial primary key,
+    order_id serial primary key,
     customer_id int  not null,
     order_date date default current_date,
     status varchar(20) not null check(status in ('pending','shipped','delivered','cancelled')),
     total_amount decimal(10,2),
-    foreign key (customer_id) reffrences customers(customer_id)
+    foreign key (customer_id) refrences customers(customer_id)
 );
 
 --Table for Payments:
@@ -39,9 +39,11 @@ create table payments (
     amount decimal(10,2) not null,
     status varchar(20) check (status in ('paid', 'failed', 'refunded')),
     payment_method varchar(50),
-    foreign key(order_id) reffrences orders(order_id)
+    foreign key(order_id) refrences orders(order_id)
 );
 
+
+--Datas Entered for the corresponding tables 
 
 -- Sample Data: Customers:
 
@@ -69,6 +71,55 @@ values
 --sample Data: Payments:
 insert into payments(order_id,payment_date,amount,payment_method,status)
 values
-(7,'2025-07-06',2500.00,'UPI','paid'),
-(8,'2025-07-07',6000.00,'Cash','failed');
+(1,'2025-07-06',2500.00,'UPI','paid'),
+(2,'2025-07-07',6000.00,'Cash','failed');
 
+
+--Quering and Joins
+
+-- recent orders with customer info
+
+
+select o.order_id, o.order_date, o.status, o.total_amount,
+       c.name as customer_name, c.email
+from orders o
+join customers c on o.customer_id = c.customers_id
+order by o.order_date desc;
+
+
+
+-- total sales per customer
+
+
+select c.name, sum(o.total_amount) as total_spent
+from customers c
+join orders o on c.customers_id = o.customer_id
+where o.status = 'delivered'
+group by c.name;
+
+
+
+-- daily sales report
+
+
+select order_date, count(*) as total_orders, sum(total_amount) as daily_revenue
+from orders
+where status = 'delivered'
+group by order_date
+order by order_date desc;
+
+
+
+-- create index for optimization
+
+create index idx_orders_date_status on orders(order_date, status);
+
+
+-- view for reporting
+
+
+create view customer_sales_summary as
+select c.customers_id, c.name, count(o.order_id) as order_count, sum(o.total_amount) as total_spent
+from customers c
+join orders o on c.customers_id = o.customer_id
+group by c.customers_id, c.name;
